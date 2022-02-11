@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="8e5e7169-c669-4035-a70e-1c33ceb371f5" >
+		<http:listener-connection host="${api.host}" port="${http.port}" />
+	</http:listener-config>
+	<flow name="customer-sfdc-sysFlow" doc:id="670bc390-790b-40a2-99a2-3d5244d66476" >
+		<http:listener doc:name="GET /sfdc" doc:id="590d23d6-adea-45f7-8cad-a7fa603b91b0" path="/customerInfo" allowedMethods="GET" config-ref="HTTP_Listener_config">
+			<http:response statusCode="#[vars.httpStatus default 200]" />
+			<http:error-response statusCode="#[vars.httpStatus default 500]" >
+				<http:body ><![CDATA[#[payload]]]></http:body>
+			</http:error-response>
+		</http:listener>
+		<salesforce:query doc:name="get customer details" doc:id="40c02237-a7f6-4c7b-b752-165d6e8ad145" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[SELECT Id, accountNumber, Name, phone, BillingAddress, ShippingAddress FROM Account where Id = ':ID']]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	"ID" : attributes.queryParams.Id
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<ee:transform doc:name="transforming to json response" doc:id="dc6e347b-65d1-43f0-b5a2-56afeb1f5a88" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="sending response" doc:id="84078897-cf00-45da-af49-fd4336067222" message="#['Customer Details sent for Id ' ++ payload[0].Id]"/>
+		<error-handler ref="error-handler" />
+	</flow>
+</mule>

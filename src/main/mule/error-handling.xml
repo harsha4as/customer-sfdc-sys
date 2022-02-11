@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:api-error-handler-module="http://www.mulesoft.org/schema/mule/api-error-handler-module"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/api-error-handler-module http://www.mulesoft.org/schema/mule/api-error-handler-module/current/mule-api-error-handler-module.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<error-handler name="error-handler" doc:id="5a4818b0-977f-45d4-84c2-cb7fc98a0451" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d6fc9d71-3ca6-4bf8-b50b-4f52d9e84cca" type="ANY">
+			<ee:transform doc:name="error.description" doc:id="7a251eb3-ee5b-4c0e-acec-6c10f161c96a" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0output application/json
+---
+{	"errorCode": attributes.httpStatus,
+	"errorMessage": error.description
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<set-variable value="#[attributes.httpStatus]" doc:name="Set HTTP Status Code" doc:id="c9fe33a4-42d8-4b79-a060-29a183d04ef3" variableName="httpStatus" />
+		</on-error-propagate>
+	</error-handler>
+</mule>
